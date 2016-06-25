@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Task Conveyor</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.4.6/mousetrap.min.js"></script>
+
+    <script src="/task-conveyor.js"></script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.0.28/css/bulma.css">
+
+    <link rel="stylesheet" href="/task-conveyor.css">
+  </head>
+
+  <body>
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            Task Conveyor
+          </h1>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="columns">
+          <div class="column">
+            <p>Let's process and organize your tasks.</p>
+
+            <p><em>I want to process...</em></p>
+
+            <ul>
+              <li><a href="#" id="process-inbox">my inbox</a></li>
+              <li><a href="#" id="process-overdue">my overdue tasks</a></li>
+              <li><a href="#" id="process-labels">my unused labels</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="columns">
+          <div class="column is-half is-offset-one-quarter">
+            <div class="box" id="current-task">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="columns">
+          <div class="column">
+            <ul id="projects"></ul>
+          </div>
+
+          <div class="column">
+            <ul id="labels"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
