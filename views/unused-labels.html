@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <script>
+      $(function () {
+        $('.ui.checkbox').checkbox()
+
+        $('#select-all').checkbox({
+          onChecked: function() {
+            $('.grouped.fields .checkbox').checkbox('check');
+          },
+          onUnchecked: function() {
+            $('.grouped.fields .checkbox').checkbox('uncheck');
+          }
+        });
+      });
+    </script>
+
+    <style>
+      .container {
+        padding: 2em 0;
+      }
+    </style>
+{% endblock %}
+
+{% block container %}
+    <div class="ui text container">
+      <form class="ui form" method="post">
+        <h1 class="ui dividing header">Remove unused labels</h1>
+
+        <div class="field">
+          <div class="ui checkbox" id="select-all">
+            <input type="checkbox" tabindex="0" class="hidden">
+            <label><strong>Select all</strong></label>
+          </div>
+        </div>
+
+        <div class="grouped fields">
+          {% for label in labels %}
+          <div class="field">
+            <div class="ui checkbox">
+              <input type="checkbox" class="hidden" name="labels" value="{{ label.id }}">
+              <label>{{ label.name }}</label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="ui button">Back</div>
+
+        <button class="ui red button" type="submit">
+          <i class="left x icon"></i>
+
+          Delete
+        </button>
+      </form>
+    </div>
+{% endblock %}

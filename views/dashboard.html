@@ -1,71 +1,51 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Task Conveyor</title>
+{% extends 'base.html' %}
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.4.6/mousetrap.min.js"></script>
-
+{% block head %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.1/mousetrap.min.js"></script>
     <script src="/task-conveyor.js"></script>
+{% endblock %}
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+{% block container %}
+    <div class="ui container">
+      <div class="ui massive vertical menu">
+        <a class="item" href="/overdue-tasks/">
+          <div id="overdue-count" class="ui small red label hidden"></div>
+          Overdue tasks
+        </a>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.0.28/css/bulma.css">
+        <a class="item" href="/inbox/">
+          <div id="inbox-count" class="ui small label hidden"></div>
+          Inbox
+        </a>
 
-    <link rel="stylesheet" href="/task-conveyor.css">
-  </head>
-
-  <body>
-    <section class="hero">
-      <div class="hero-body">
-        <div class="container">
-          <h1 class="title">
-            Task Conveyor
-          </h1>
-        </div>
+        <a class="item" href="/unused-labels/">
+          <div id="unused-count" class="ui small label hidden"></div>
+          Unused labels
+        </a>
       </div>
-    </section>
 
-    <section class="section">
-      <div class="container">
-        <div class="columns">
-          <div class="column">
-            <p>Let's process and organize your tasks.</p>
+      <div class="box" id="current-task">Loading...</div>
 
-            <p><em>I want to process...</em></p>
+      <ul id="projects"></ul>
+      <ul id="labels"></ul>
+    </div>
 
-            <ul>
-              <li><a href="#" id="process-inbox">my inbox</a></li>
-              <li><a href="#" id="process-overdue">my overdue tasks</a></li>
-              <li><a href="#" id="process-labels">my unused labels</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+    <script>
+      window.twttr = (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0],
+          t = window.twttr || {};
+        if (d.getElementById(id)) return t;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "https://platform.twitter.com/widgets.js";
+        fjs.parentNode.insertBefore(js, fjs);
 
-    <section class="section">
-      <div class="container">
-        <div class="columns">
-          <div class="column is-half is-offset-one-quarter">
-            <div class="box" id="current-task">Loading...</div>
-          </div>
-        </div>
-      </div>
-    </section>
+        t._e = [];
+        t.ready = function(f) {
+          t._e.push(f);
+        };
 
-    <section class="section">
-      <div class="container">
-        <div class="columns">
-          <div class="column">
-            <ul id="projects"></ul>
-          </div>
-
-          <div class="column">
-            <ul id="labels"></ul>
-          </div>
-        </div>
-      </div>
-    </section>
-  </body>
-</html>
+        return t;
+      }(document, "script", "twitter-wjs"));
+    </script>
+{% endblock %}

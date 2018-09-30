@@ -18,12 +18,13 @@ function parseContent(content, cb) {
     return;
   }
 
-  cb(null, content.replace(/(https?:\/\/[^ ]+) \(([^\(\)]+)\)/g, '<a href="$1">$2</a>'), {});
+  cb(null, content.replace(/(https?:\/\/[^ ]+) \(([^()]+)\)/g, '<a href="$1">$2</a>'), {});
 }
 
 function updateItem(item) {
   parseContent(item.content, function (err, content, metadata) {
-    if (content.indexOf('t.co/') === -1 || metadata.tweet === true) {
+    if (content && content.indexOf('t.co/') === -1 ||
+        metadata.tweet === true) {
       $('#current-task').html(content);
 
       return;
@@ -51,28 +52,47 @@ $(function () {
   $.getJSON('/tasks/', function (data) {
     userData = data;
 
-    $('#loading').hide();
+    if (data.overdue.length) {
+      $('#overdue-count').text(data.overdue.length);
+      $('#overdue-count').removeClass('hidden');
+    }
 
-    data.projectCounts.forEach(function (project) {
-      $('#projects').append('<li class="tag is-small is-primary">' +
-                            '<a href="#">' +
-                            project.name +
-                            '</a>' +
-                            '</li>');
-    });
+    if (data.inbox.length) {
+      $('#inbox-count').text(data.inbox.length);
+      $('#inbox-count').removeClass('hidden');
+    }
 
-    data.labelCounts.forEach(function (label) {
-      $('#labels').append('<li class="tag is-small is-info">' +
-                          '<a href="#">' +
-                          label.name +
-                          '</a>' +
-                          '</li>');
-    });
+    if (data.unusedLabels.length) {
+      $('#unused-count').text(data.unusedLabels.length);
+      $('#unused-count').removeClass('hidden');
+    }
+
+    // data.projectCounts.forEach(function (project) {
+    //   $('#projects').append('<li class="tag is-small is-primary">' +
+    //                         '<a href="#">' +
+    //                         project.name +
+    //                         '</a>' +
+    //                         '</li>');
+    // });
+
+    // data.labelCounts.forEach(function (label) {
+    //   $('#labels').append('<li class="tag is-small is-info">' +
+    //                       '<a href="#">' +
+    //                       label.name +
+    //                       '</a>' +
+    //                       '</li>');
+    // });
 
     updateItem(data.todoist.items[0]);
   });
 
-  Mousetrap.bind('enter', function () {
+  Mousetrap.bind(['left', 'up', 'k'], function () {
+    updateItem(userData.todoist.items[--counter]);
+
+    return false;
+  });
+
+  Mousetrap.bind(['enter', 'right', 'down', 'j'], function () {
     updateItem(userData.todoist.items[++counter]);
 
     return false;
