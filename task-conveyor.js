@@ -79,11 +79,9 @@ function secure(req, res, next) {
 }
 
 app.get('/', (req, res) => {
-  if (!req.session || !req.session.todoistToken) {
-    return res.render('logged-out.html');
-  }
-
-  res.render('dashboard.html');
+  res.render('dashboard.html', {
+    loggedIn: !!(req.session && req.session.todoistToken)
+  });
 });
 
 app.get('/todoist-callback/', (req, res) => {

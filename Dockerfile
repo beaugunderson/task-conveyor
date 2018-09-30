@@ -1,22 +1,27 @@
 FROM node:alpine
 
-RUN apk add --no-cache \
-        bash \
-        postgresql-client
+RUN \
+  apk add --no-cache \
+    bash \
+    ca-certificates \
+    postgresql-client
 
-RUN apk add --no-cache --virtual build-dependencies \
-        build-base \
-        git \
-        linux-headers \
-        musl-dev \
-        postgresql-dev \
-        python
+COPY package.json package-lock.json /app/
 
-WORKDIR /app/
+RUN \
+  apk add --no-cache --virtual build-dependencies \
+    build-base \
+    git \
+    linux-headers \
+    musl-dev \
+    postgresql-dev \
+    python && \
+  cd /app && \
+  npm install && \
+  apk del build-dependencies
 
-COPY package.json /app/
-
-RUN npm install
-RUN apk del build-dependencies
+RUN update-ca-certificates
 
 COPY . /app/
+
+WORKDIR /app/

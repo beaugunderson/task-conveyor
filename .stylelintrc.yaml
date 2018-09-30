@@ -1,0 +1,29 @@
+---
+  extends:
+    - stylelint-config-standard
+    - stylelint-config-recommended-scss
+
+  plugins:
+    - stylelint-declaration-block-no-ignored-properties
+    - stylelint-no-unsupported-browser-features
+    - stylelint-scss
+
+  rules:
+    color-named: never
+    declaration-block-no-redundant-longhand-properties: null
+    max-line-length: 99
+    no-empty-source: null
+    no-descending-specificity:
+      - true
+      - severity: warning
+    plugin/declaration-block-no-ignored-properties: true
+    plugin/no-unsupported-browser-features:
+      - true
+      - browsers: ['last 1 Chrome version']
+        severity: warning
+    property-no-vendor-prefix: true
+    scss/at-extend-no-missing-placeholder:
+      - true
+      - severity: warning
+    shorthand-property-no-redundant-values: null
+    selector-list-comma-newline-after: always-multi-line

@@ -1,0 +1,8 @@
+name: task-conveyor
+
+windows:
+  - docker:
+      layout: main-vertical
+      panes:
+        - npm install; npm run build-dev
+        - docker-compose up --build web

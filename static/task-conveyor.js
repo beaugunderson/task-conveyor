@@ -1,25 +1,87 @@
 // @flow
 
-/* globals Mousetrap:true twttr:true */
+/* globals twttr:true */
 
 import 'semantic-ui-css/semantic.min.css';
+import './task-conveyor.scss';
 
+import Mousetrap from 'mousetrap';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import urlRegex from 'url-regex';
+import XRegExp from 'xregexp';
 import { BrowserRouter } from 'react-router-dom';
-import { Grid, Header, Label, Menu, Segment } from 'semantic-ui-react';
+import { Button, Grid, Header, Label, Menu, Progress, Segment } from 'semantic-ui-react';
+
+const RE_MARKUP_LINK = XRegExp(`(?<href>https?://[^ ]+)\\s+\\((?<title>[^()]+)\\)`);
+const RE_TWEET = /^https?:\/\/twitter.com\/[a-z0-9_]+\/status\/\d+/i;
+const RE_URL = /https?:\/\/(t\.co|bit\.ly|tinyurl\.com)([^ ”<>\b]+|$)/;
+
+const PROJECT_COLORS = [
+  '#95ef63',
+  '#ff8581',
+  '#ffc471',
+  '#f9ec75',
+  '#a8c8e4',
+  '#d2b8a3',
+  '#e2a8e4',
+  '#cccccc',
+  '#fb886e',
+  '#ffcc00',
+  '#74e8d3',
+  '#3bd5fb',
+  '#dc4fad',
+  '#ac193d',
+  '#d24726',
+  '#82ba00',
+  '#03b3b2',
+  '#008299',
+  '#5db2ff',
+  '#0072c6',
+  '#000000',
+  '#777777'
+];
+
+const LABEL_COLORS = [
+  '#019412',
+  '#a39d01',
+  '#e73d02',
+  '#e702a4',
+  '#9902e7',
+  '#1d02e7',
+  '#0082c5',
+  '#555555',
+  '#008299',
+  '#03b3b2',
+  '#ac193d',
+  '#82ba00',
+  '#111111'
+];
+
+function fixUrl(url) {
+  if (!url.match(/:\/\//)) {
+    return `https://${url}`;
+  }
+
+  return url;
+}
 
 async function parseContent(content) {
-  const tweet = content.match(/^https?:\/\/twitter.com\/[a-z0-9_]+\/status\/\d+/i);
+  let match;
 
-  if (tweet) {
-    const response = await fetch(`/tweet/${btoa(tweet)}`);
+  if ((match = content.match(RE_TWEET))) {
+    const response = await fetch(`/tweet/${btoa(match)}`);
 
     return response.json();
   }
 
-  // TODO return HTML here
-  return content.replace(/(https?:\/\/[^ ]+) \(([^()]+)\)/g, '<a href="$1">$2</a>');
+  // first check for markdown-style links
+  if ((match = XRegExp.exec(content, RE_MARKUP_LINK))) {
+    return `<a href=${fixUrl(match.href)}>${match.title}</a>`;
+  }
+
+  // then linkify bare URLs
+  return content.replace(urlRegex({ strict: false }), url => `<a href=${fixUrl(url)}>${url}</a>`);
 }
 
 async function unshorten(url) {
@@ -39,7 +101,7 @@ async function itemContent(item) {
     return content.html;
   }
 
-  const url = content.match(/https?:\/\/(t\.co|bit\.ly)([^ ”<>\b]+|$)/);
+  const url = content.match(RE_URL);
 
   if (!url) {
     return content;
@@ -91,22 +153,87 @@ class Task extends React.Component<TaskProps, TaskState> {
   }
 
   render() {
+    const { content } = this.state;
+
+    if (!content) {
+      return null;
+    }
+
+    const { project, labels } = this.props;
+
+    const labelItems =
+      labels && labels.length
+        ? labels.map((label, index) => (
+            <>
+              <span key={label.name} style={{ color: LABEL_COLORS[label.color] }}>
+                {label.name}
+              </span>
+              {index < labels.length - 1 && <span key={`${label.name}-seperator`}>,&nbsp;</span>}
+            </>
+          ))
+        : 'No labels';
+
     return (
-      <React.Fragment>
-        {this.state.content && (
-          <Segment stacked id="task">
-            <div id="current-task" dangerouslySetInnerHTML={this.state.content} />
+      <>
+        <Button.Group attached="top" basic size="large" widths="2">
+          <Button>
+            <kbd>P</kbd>
+            {project.name}{' '}
+            <Label circular style={{ backgroundColor: PROJECT_COLORS[project.color] }} empty />
+          </Button>
 
-            <div className="project">{this.props.project?.name || ''}</div>
+          <Button>
+            <kbd>L</kbd>
+            {labelItems}
+          </Button>
+        </Button.Group>
 
-            <ul id="labels">
-              {this.props.labels.map(label => (
-                <li>{label.name}</li>
-              ))}
-            </ul>
+        <Segment attached className="task-container">
+          <div className="current-task" dangerouslySetInnerHTML={content} />
+        </Segment>
+
+        <Button.Group attached="bottom" basic size="large" widths="5">
+          <Button>
+            <kbd>←</kbd> Previous
+          </Button>
+
+          <Button color="red">
+            <kbd>X</kbd> Delete
+          </Button>
+
+          <Button>
+            <kbd>D</kbd> Due date
+          </Button>
+
+          <Button>
+            <kbd>C</kbd> Complete
+          </Button>
+
+          <Button>
+            <kbd>→</kbd> Next
+          </Button>
+        </Button.Group>
+      </>
+    );
+  }
+}
+
+class LoggedOut extends React.Component<{}> {
+  render() {
+    return (
+      <Grid middle aligned center>
+        <Grid.Column>
+          <Header image color="red">
+            <Header.Content>Log-in to your account</Header.Content>
+          </Header>
+
+          <Segment stacked>
+            <a className="ui fluid large red submit button" href="/connect/todoist">
+              Log in with Todoist
+            </a>
           </Segment>
-        )}
-      </React.Fragment>
+        </Grid.Column>
+      </Grid>
     );
   }
 }
@@ -149,11 +276,14 @@ class TaskConveyor extends React.Component<{}, TaskConveyorState> {
     });
   }
 
-  render() {
-    console.log({ state: this.state });
+  componentWillUnmount() {
+    Mousetrap.unbind(['left', 'up', 'k']);
+    Mousetrap.unbind(['enter', 'right', 'down', 'j']);
+  }
 
-    const task =
-      this.state.data.todoist?.items && this.state.data.todoist.items[this.state.currentItem];
+  render() {
+    const { currentItem, data } = this.state;
+    const task = data.todoist?.items && data.todoist.items[currentItem];
 
     let labels;
     let project;
@@ -162,8 +292,6 @@ class TaskConveyor extends React.Component<{}, TaskConveyorState> {
       labels = task.labels.map(label => this.state.data.todoist.labels.find(l => l.id === label));
       project = this.state.data.todoist.projects.find(p => p.id === task.project_id);
     }
-
-    console.log({ project });
 
     return (
       <>
@@ -185,6 +313,15 @@ class TaskConveyor extends React.Component<{}, TaskConveyorState> {
         </Menu>
 
         {task && <Task labels={labels} project={project} task={task} />}
+
+        <Progress
+          attached="bottom"
+          className="task-progress"
+          color="blue"
+          size="tiny"
+          total={data.todoist?.items?.length}
+          value={currentItem + 1}
+        />
       </>
     );
   }
@@ -192,15 +329,15 @@ class TaskConveyor extends React.Component<{}, TaskConveyorState> {
 
 ReactDOM.render(
   <BrowserRouter>
-    <Grid centered container style={{ paddingTop: '2em' }}>
+    <Grid centered container className="main-column">
       <Grid.Column width={16}>
-        <Header size="huge" style={{ marginBottom: '1em' }}>
+        <Header size="huge" className="main-header">
           <Header.Content>
             <a href="/">Task Conveyor</a>
           </Header.Content>
         </Header>
 
-        <TaskConveyor />
+        {window.loggedIn ? <TaskConveyor /> : <LoggedOut />}
       </Grid.Column>
     </Grid>
   </BrowserRouter>,

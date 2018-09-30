@@ -20,7 +20,7 @@ services:
     restart: 'no'
     volumes:
       - /app/node_modules/
-      - .:/app
+      - .:/app:delegated
 
   redis:
     command: redis-server --appendonly yes

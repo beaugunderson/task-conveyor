@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 
 {% block head %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.1/mousetrap.min.js"></script>
+  <script>
+    window.loggedIn = {{ loggedIn }};
+  </script>
 {% endblock %}
 
 {% block container %}
