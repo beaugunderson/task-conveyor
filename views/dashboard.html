@@ -2,50 +2,27 @@
 
 {% block head %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.1/mousetrap.min.js"></script>
-    <script src="/task-conveyor.js"></script>
 {% endblock %}
 
 {% block container %}
-    <div class="ui container">
-      <div class="ui massive vertical menu">
-        <a class="item" href="/overdue-tasks/">
-          <div id="overdue-count" class="ui small red label hidden"></div>
-          Overdue tasks
-        </a>
+    <div id="root"></div>
 
-        <a class="item" href="/inbox/">
-          <div id="inbox-count" class="ui small label hidden"></div>
-          Inbox
-        </a>
+    <script src="/dist/index.bundle.js"></script>
 
-        <a class="item" href="/unused-labels/">
-          <div id="unused-count" class="ui small label hidden"></div>
-          Unused labels
-        </a>
-      </div>
+    <script>window.twttr = (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0],
+        t = window.twttr || {};
+      if (d.getElementById(id)) return t;
+      js = d.createElement(s);
+      js.id = id;
+      js.src = "https://platform.twitter.com/widgets.js";
+      fjs.parentNode.insertBefore(js, fjs);
 
-      <div class="box" id="current-task">Loading...</div>
+      t._e = [];
+      t.ready = function(f) {
+        t._e.push(f);
+      };
 
-      <ul id="projects"></ul>
-      <ul id="labels"></ul>
-    </div>
-
-    <script>
-      window.twttr = (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0],
-          t = window.twttr || {};
-        if (d.getElementById(id)) return t;
-        js = d.createElement(s);
-        js.id = id;
-        js.src = "https://platform.twitter.com/widgets.js";
-        fjs.parentNode.insertBefore(js, fjs);
-
-        t._e = [];
-        t.ready = function(f) {
-          t._e.push(f);
-        };
-
-        return t;
-      }(document, "script", "twitter-wjs"));
-    </script>
+      return t;
+    }(document, "script", "twitter-wjs"));</script>
 {% endblock %}

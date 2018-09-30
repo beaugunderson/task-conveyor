@@ -1,5 +1,3 @@
-'use strict';
-
 const atob = require('atob');
 const bodyParser = require('body-parser');
 const cacheManager = require('cache-manager');
@@ -22,7 +20,7 @@ const redisCache = cacheManager.caching({
   ttl: 60 * 60
 });
 
-redisCache.store.events.on('redisError', (error) => console.log(error));
+redisCache.store.events.on('redisError', error => console.log(error));
 
 const PRODUCTION = process.env === 'production';
 
@@ -35,11 +33,7 @@ const grant = new Grant({
     key: process.env.TODOIST_CLIENT_ID,
     secret: process.env.TODOIST_CLIENT_SECRET,
     callback: '/todoist-callback/',
-    scope: [
-      'data:read_write',
-      'data:delete',
-      'project:delete'
-    ]
+    scope: ['data:read_write', 'data:delete', 'project:delete']
   }
 });
 
@@ -54,24 +48,27 @@ nunjucks.configure('views', {
 
 app.use(logger('dev'));
 
-app.use(session({
-  name: 'task-conveyor',
-  saveUninitialized: false,
-  resave: false,
-  secret: process.env.SESSION_SECRET,
-  store: new RedisStore({
-    url: 'redis://redis/0',
-    logErrors: true
+app.use(
+  session({
+    name: 'task-conveyor',
+    saveUninitialized: false,
+    resave: false,
+    secret: process.env.SESSION_SECRET,
+    store: new RedisStore({
+      url: 'redis://redis/0',
+      logErrors: true
+    })
   })
-}));
+);
 
 app.use(grant);
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/semantic', express.static(__dirname + '/node_modules/semantic-ui-css/'));
-app.use(express.static('static'));
+app.use('/dist', express.static(`${__dirname}/dist`));
+app.use('/semantic', express.static(`${__dirname}/node_modules/semantic-ui-css/`));
+app.use(express.static(`${__dirname}/static`));
 
 function secure(req, res, next) {
   if (!req.session || !req.session.todoistToken) {
@@ -100,18 +97,25 @@ app.get('/logout/', (req, res) => {
 });
 
 function cachedEmbed(url, cb) {
-  redisCache.wrap(url, (cacheCb) => {
-    request.get({
-      url: 'https://api.twitter.com/1/statuses/oembed.json',
-      qs: {
-        url: atob(url),
-        align: 'center',
-        omit_script: 'true'
-      },
-      json: true
+  redisCache.wrap(
+    url,
+    cacheCb => {
+      request.get(
+        {
+          url: 'https://api.twitter.com/1/statuses/oembed.json',
+          qs: {
+            url: atob(url),
+            align: 'center',
+            omit_script: 'true'
+          },
+          json: true
+        },
+        (err, response, body) => cacheCb(err, body)
+      );
     },
-    (err, response, body) => cacheCb(err, body));
-  }, {ttl: 24 * 60 * 60}, cb);
+    { ttl: 24 * 60 * 60 },
+    cb
+  );
 }
 
 app.get('/tweet/:url', (req, res) => {
@@ -121,14 +125,21 @@ app.get('/tweet/:url', (req, res) => {
 });
 
 function cachedUnshorten(url, cb) {
-  redisCache.wrap(url, (cacheCb) => {
-    request({
-      method: 'HEAD',
-      url: atob(url),
-      followAllRedirects: true
+  redisCache.wrap(
+    url,
+    cacheCb => {
+      request(
+        {
+          method: 'HEAD',
+          url: atob(url),
+          followAllRedirects: true
+        },
+        (err, response) => cacheCb(err, response.request.href)
+      );
     },
-    (err, response) => cacheCb(err, response.request.href));
-  }, {ttl: 24 * 60 * 60}, cb);
+    { ttl: 24 * 60 * 60 },
+    cb
+  );
 }
 
 app.get('/unshorten/:url', (req, res) => {
@@ -142,27 +153,34 @@ app.post('/tasks/edit/', secure, (req, res) => {
 });
 
 function getTasks(token, cb) {
-  request.post({
-    url: 'https://todoist.com/API/v7/sync',
-    form: {
-      token: token,
-      sync_token: '*',
-      resource_types: '["filters", "items", "labels", "projects", "user"]'
+  request.post(
+    {
+      url: 'https://todoist.com/API/v7/sync',
+      form: {
+        token,
+        sync_token: '*',
+        resource_types: '["filters", "items", "labels", "projects", "user"]'
+      },
+      json: true
     },
-    json: true
-  },
-  (err, response, body) => {
-    // pre-filter to only active items
-    body.items = todoist.onlyActive(body.items);
+    (err, response, body) => {
+      // pre-filter to only active items
+      body.items = todoist.onlyActive(body.items);
 
-    cb(err, body);
-  });
+      cb(err, body);
+    }
+  );
 }
 
 function getCachedTasks(token, cb) {
-  redisCache.wrap(token, (cacheCb) => {
-    getTasks(token, cacheCb);
-  }, {ttl: 60 * 60}, cb);
+  redisCache.wrap(
+    token,
+    cacheCb => {
+      getTasks(token, cacheCb);
+    },
+    { ttl: 60 * 60 },
+    cb
+  );
 }
 
 function invalidateTasks(token, cb) {
@@ -183,46 +201,46 @@ function tasksMiddleware(req, res, next) {
 
 app.get('/overdue-tasks/', secure, tasksMiddleware, (req, res) => {
   res.render('unused-labels.html', {
-    overdue: todoist.getOverdueTasks(req.tasks),
+    overdue: todoist.getOverdueTasks(req.tasks)
   });
 });
 
 app.get('/inbox/', secure, tasksMiddleware, (req, res) => {
   res.render('unused-labels.html', {
-    inbox: todoist.getInboxTasks(req.tasks),
+    inbox: todoist.getInboxTasks(req.tasks)
   });
 });
 
 app.get('/unused-labels/', secure, tasksMiddleware, (req, res) => {
   res.render('unused-labels.html', {
-    labels: todoist.unusedLabels(req.tasks),
+    labels: todoist.unusedLabels(req.tasks)
   });
 });
 
 function deleteLabels(token, labels, cb) {
-  var commands = labels.map((label) => {
+  const commands = labels.map(label => {
     return {
       type: 'label_delete',
       uuid: uuid(),
-      args: {id: parseInt(label, 10)}
+      args: { id: parseInt(label, 10) }
     };
   });
 
-  request.post({
-    url: 'https://todoist.com/API/v7/sync',
-    form: {
-      token: token,
-      commands: JSON.stringify(commands),
+  request.post(
+    {
+      url: 'https://todoist.com/API/v7/sync',
+      form: {
+        token,
+        commands: JSON.stringify(commands)
+      },
+      json: true
     },
-    json: true,
-  },
-  (err, response, body) => cb(err, body));
+    (err, response, body) => cb(err, body)
+  );
 }
 
 app.post('/unused-labels/', secure, (req, res) => {
-  const labels = Array.isArray(req.body.labels) ?
-    req.body.labels :
-    [req.body.labels];
+  const labels = Array.isArray(req.body.labels) ? req.body.labels : [req.body.labels];
 
   deleteLabels(req.session.todoistToken, labels, () => {
     invalidateTasks(req.session.todoistToken, () => res.redirect('/'));
