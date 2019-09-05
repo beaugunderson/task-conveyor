@@ -81,7 +81,16 @@ async function parseContent(content) {
   }
 
   // then linkify bare URLs
-  return content.replace(urlRegex({ strict: false }), url => `<a href=${fixUrl(url)}>${url}</a>`);
+  return content.replace(urlRegex({ strict: false }), async url => {
+    let unshortenedUrl = url;
+    const shortenedUrl = url.match(RE_URL);
+
+    if (shortenedUrl) {
+      unshortenedUrl = await unshorten(url);
+    }
+
+    return `<a href=${fixUrl(unshortenedUrl)}>${unshortenedUrl}</a>`;
+  });
 }
 
 async function unshorten(url) {
@@ -101,15 +110,7 @@ async function itemContent(item) {
     return content.html;
   }
 
-  const url = content.match(RE_URL);
-
-  if (!url) {
-    return content;
-  }
-
-  const unshortened = await unshorten(url[0]);
-
-  return content.replace(url[0], unshortened);
+  return content;
 }
 
 type TaskProps = {
@@ -164,12 +165,10 @@ class Task extends React.Component<TaskProps, TaskState> {
     const labelItems =
       labels && labels.length
         ? labels.map((label, index) => (
-            <>
-              <span key={label.name} style={{ color: LABEL_COLORS[label.color] }}>
-                {label.name}
-              </span>
-              {index < labels.length - 1 && <span key={`${label.name}-seperator`}>,&nbsp;</span>}
-            </>
+            <span key={label.name}>
+              <span style={{ color: LABEL_COLORS[label.color] }}>{label.name}</span>
+              {index < labels.length - 1 && ', '}
+            </span>
           ))
         : 'No labels';
 
